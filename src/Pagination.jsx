@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 
 export default function Pagination() {
   const [employees, setEmployees] = useState([]);
-  const [page, setPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchEmployees = async () => {
       try {
         const response = await fetch(
           "https://geektrust.s3-ap-southeast-1.amazonaws.com/adminui-problem/members.json"
@@ -15,32 +17,33 @@ export default function Pagination() {
         }
         const data = await response.json();
         setEmployees(data);
+        setTotalPages(Math.ceil(data.length / itemsPerPage));
       } catch (error) {
         alert("Failed to fetch data");
-        console.error("Error fetching data:", error.message);
+        console.error("Error fetching employees:", error.message);
       }
     };
 
-    fetchData();
+    fetchEmployees();
   }, []);
 
-  const handlePrevious = () => {
-    if (page > 1) {
-      setPage(page - 1);
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage((prevPage) => prevPage + 1);
     }
   };
 
-  const handleNext = () => {
-    const totalPages = Math.ceil(employees.length / 10);
-    if (page < totalPages) {
-      setPage(page + 1);
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage((prevPage) => prevPage - 1);
     }
   };
 
-  const startIndex = (page - 1) * 10;
-  const endIndex = page * 10;
-
-  const visibleEmployees = employees.slice(startIndex, endIndex);
+  const getPaginatedData = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return employees.slice(startIndex, endIndex);
+  };
 
   return (
     <div style={{ padding: "20px" }}>
@@ -65,8 +68,8 @@ export default function Pagination() {
           </tr>
         </thead>
         <tbody>
-          {visibleEmployees.map((employee, index) => (
-            <tr key={index}>
+          {getPaginatedData().map((employee) => (
+            <tr key={employee.id}>
               <td
                 style={{
                   borderBottom: "2px solid #f4f4f4",
@@ -104,14 +107,11 @@ export default function Pagination() {
         </tbody>
       </table>
       <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
-        <button onClick={handlePrevious} disabled={page === 1}>
+        <button onClick={handlePreviousPage} disabled={currentPage === 1}>
           Previous
         </button>
-        <button style={{ height: "30px" }}>{page}</button>
-        <button
-          onClick={handleNext}
-          disabled={page === Math.ceil(employees.length / 10)}
-        >
+        <button style={{ height: "30px" }}>{currentPage}</button>
+        <button onClick={handleNextPage} disabled={currentPage === totalPages}>
           Next
         </button>
       </div>
